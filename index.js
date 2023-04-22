@@ -7,21 +7,21 @@ require('dotenv').config()
 //mongoose - mongodb connection
 const mongoose = require('mongoose');
 const { log } = require('console');
-mongoose.connect(process.env.MONGO_URI, 
+mongoose.connect(process.env.MONGO_URI,
   { useNewUrlParser: true, useUnifiedTopology: true });
-// User schema
+// ----------- User schema -------------------
 const userSchema = new mongoose.Schema({
-  username: {type: String, required: true}
-}, {versionKey: false});
+  username: { type: String, required: true }
+}, { versionKey: false });
 const User = mongoose.model("User", userSchema);
-// Exercise schema
+// ---------- Exercise schema -----------------
 const exerciseSchema = new mongoose.Schema({
-  username: {type: String},
-  description: {type: String, required: true},
-  duration: {type: Number, required: true},
-  date: {type: String},
-  _id: {type: String}
-}, {versionKey: false});
+  username: { type: String },
+  description: { type: String, required: true },
+  duration: { type: Number, required: true },
+  date: { type: String },
+  userId: {type: String}
+}, { versionKey: false });
 const Exercise = mongoose.model("Exercise", exerciseSchema);
 
 app.use(cors())
@@ -35,7 +35,7 @@ app.use(bodyParser.json());
 // post api to create user in db
 app.post("/api/users", (req, res) => {
   let name = req.body.username;
-  User.create({username: name}).then(result => {
+  User.create({ username: name }).then(result => {
     res.json({
       username: result.username,
       _id: result._id
@@ -52,9 +52,9 @@ app.get("/api/users", (req, res) => {
 app.get("/api/users/:_id", async (req, res) => {
   let id = req.params._id;
   var usr = null;
-  try{
+  try {
     usr = await User.findById(id);
-  }catch(err){
+  } catch (err) {
     console.log(err);
   }
   console.log(usr.username);
@@ -66,27 +66,28 @@ app.post("/api/users/:_id/exercises", async (req, res) => {
   let desc = req.body.description;
   let duration = req.body.duration;
   let dt = req.body.date;
-  if(dt == '')
+  if (dt == '')
     dt = new Date().toISOString().slice(0, 10);
   let user = null;
-  try{
+  try {
     user = await User.findById(id);
-  }catch(err){
+  } catch (err) {
     console.log(err);
   }
   //console.log("## "+user.username);
   Exercise.create({
-    username: user.username, 
-    _id: id, 
-    description: desc, 
-    duration: duration, 
-    date: dt}).then(result => {
-      res.json({
-        _id: result._id,
-        username: result.username,
-        description: result.description,
-        duration: result.duration,
-        date: result.date
+    username: user.username,
+    userId: id,
+    description: desc,
+    duration: duration,
+    date: dt
+  }).then(result => {
+    res.json({
+      _id: result.userId,
+      username: result.username,
+      description: result.description,
+      duration: result.duration,
+      date: result.date
     });
   });
 });
@@ -95,26 +96,26 @@ app.post("/api/users/:_id/exercises", async (req, res) => {
 app.get("/api/users/:_id/logs", async (req, res) => {
   let id = req.params._id;
   let exercises = null;
-  try{
-    exercises = await Exercise.find({_id: id});
+  try {
+    exercises = await Exercise.find({ userId: id });
     //console.log(exercises.length);
-  }catch(err){
+  } catch (err) {
     console.log(err);
   }
   let logObj = '{ "username": ';
-  for(let i=0; i<exercises.length; i++){
-    if(i==0){
+  for (let i = 0; i < exercises.length; i++) {
+    if (i == 0) {
       logObj = logObj + '"' + exercises[i].username + '",';
       logObj = logObj + '"count": ' + exercises.length + ',';
-      logObj = logObj + '"_id": ' + '"' + exercises[i]._id + '",';
-      logObj = logObj + '"log": [{';
+      logObj = logObj + '"_id": ' + '"' + exercises[i].userId + '",';
+      logObj = logObj + '"log": [';
     }
-    logObj = logObj + '"description": ' + '"' + exercises[i].description + '",';
+    logObj = logObj + '{"description": ' + '"' + exercises[i].description + '",';
     logObj = logObj + '"duration": ' + exercises[i].duration + ',';
     logObj = logObj + '"date": ' + '"' + (new Date(exercises[i].date)).toDateString() + '"}';
-    if(i==exercises.length-1){
+    if (i == exercises.length - 1) {
       logObj = logObj + ']}'
-    }else{
+    } else {
       logObj = logObj + ','
     }
   }
