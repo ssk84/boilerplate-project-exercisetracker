@@ -65,9 +65,11 @@ app.post("/api/users/:_id/exercises", async (req, res) => {
   let id = req.params._id;
   let desc = req.body.description;
   let duration = req.body.duration;
-  let dt = req.body.date;
-  if (dt == '')
+  let dt = new Date(req.body.date);
+  //console.log("1.dt: "+dt);
+  if (dt == '' || dt =='Invalid Date')
     dt = new Date().toISOString().slice(0, 10);
+  //console.log("2.dt: "+dt);
   let user = null;
   try {
     user = await User.findById(id);
