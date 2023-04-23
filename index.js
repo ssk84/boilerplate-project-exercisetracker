@@ -92,7 +92,7 @@ app.post("/api/users/:_id/exercises", async (req, res) => {
       username: result.username,
       description: result.description,
       duration: result.duration,
-      date: result.date
+      date: result.date.toDateString()
     });
   });
 });
@@ -101,57 +101,62 @@ app.post("/api/users/:_id/exercises", async (req, res) => {
 app.get("/api/users/:_id/logs", async (req, res) => {
   let id = req.params._id;
   const {from, to, limit } = req.query;
-  //console.log(from, to, limit);
+  console.log(from, to, limit);
   let exercises = null;
   try {
     let fromDt, toDt, filter1;
     if(!(from === undefined)){
       fromDt = new Date(from);
       fromDt = (fromDt == 'Invalid Date') ? '' : fromDt;//.toISOString().slice(0, 10);
-      //console.log("fromDt: "+fromDt);
-    }
-    if(fromDt != ''){
-      if(!(to === undefined)){
-        toDt = new Date(to);
-        toDt = (toDt == 'Invalid Date') ? new Date()//.toISOString().slice(0, 10) 
-          : toDt;//.toISOString().slice(0, 10);
-        // toDt = (toDt == 'Invalid Date') ? new Date() : toDt;
-      }else{
-        toDt = new Date();//.toISOString().slice(0, 10);
+      console.log("fromDt: "+fromDt);
+      if(fromDt != ''){
+        if(!(to === undefined)){
+          toDt = new Date(to);
+          toDt = (toDt == 'Invalid Date') ? new Date()//.toISOString().slice(0, 10) 
+            : toDt;//.toISOString().slice(0, 10);
+          // toDt = (toDt == 'Invalid Date') ? new Date() : toDt;
+        }else{
+          toDt = new Date();//.toISOString().slice(0, 10);
+        }
+        console.log("toDt: "+toDt);
+        filter1 = {
+          userId: id,
+          date: {$gte: fromDt, $lte: toDt}
+        };
       }
-      //console.log("toDt: "+toDt);
-      filter1 = {
-        userId: id,
-        date: {$gte: fromDt, $lte: toDt}
-      };
     }else{
       filter1 = { userId: id };
     }
-    //console.log("filter: "+filter1.toString());
+    console.log("filter: "+JSON.stringify(filter1));
     if(limit === undefined)
       exercises = (await Exercise.find(filter1));
     else
       exercises = (await Exercise.find(filter1).limit(limit).exec());
-    //console.log(exercises.length);
+    console.log(exercises.length);
   } catch (err) {
     console.log(err);
   }
-  let logObj = '{ "username": ';
-  for (let i = 0; i < exercises.length; i++) {
-    if (i == 0) {
-      logObj = logObj + '"' + exercises[i].username + '",';
-      logObj = logObj + '"count": ' + exercises.length + ',';
-      logObj = logObj + '"_id": ' + '"' + exercises[i].userId + '",';
-      logObj = logObj + '"log": [';
-    }
-    logObj = logObj + '{"description": ' + '"' + exercises[i].description + '",';
-    logObj = logObj + '"duration": ' + exercises[i].duration + ',';
-    //console.log("tds: "+exercises[i].date);
-    logObj = logObj + '"date": ' + '"' + exercises[i].date.toDateString() + '"}';
-    if (i == exercises.length - 1) {
-      logObj = logObj + ']}'
-    } else {
-      logObj = logObj + ','
+  let logObj;
+  if(exercises == 0){
+    logObj = '{}';
+  }else{
+    logObj = '{ "username": ';
+    for (let i = 0; i < exercises.length; i++) {
+      if (i == 0) {
+        logObj = logObj + '"' + exercises[i].username + '",';
+        logObj = logObj + '"count": ' + exercises.length + ',';
+        logObj = logObj + '"_id": ' + '"' + exercises[i].userId + '",';
+        logObj = logObj + '"log": [';
+      }
+      logObj = logObj + '{"description": ' + '"' + exercises[i].description + '",';
+      logObj = logObj + '"duration": ' + exercises[i].duration + ',';
+      //console.log("tds: "+exercises[i].date);
+      logObj = logObj + '"date": ' + '"' + exercises[i].date.toDateString() + '"}';
+      if (i == exercises.length - 1) {
+        logObj = logObj + ']}'
+      } else {
+        logObj = logObj + ','
+      }
     }
   }
 
