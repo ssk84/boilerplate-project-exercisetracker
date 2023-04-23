@@ -19,7 +19,7 @@ const exerciseSchema = new mongoose.Schema({
   username: { type: String },
   description: { type: String, required: true },
   duration: { type: Number, required: true },
-  date: { type: String },
+  date: { type: Date },
   userId: {type: String}
 }, { versionKey: false });
 const Exercise = mongoose.model("Exercise", exerciseSchema);
@@ -66,10 +66,13 @@ app.post("/api/users/:_id/exercises", async (req, res) => {
   let desc = req.body.description;
   let duration = req.body.duration;
   let dt = new Date(req.body.date);
-  //console.log("1.dt: "+dt);
+  console.log("1.dt: "+dt);
   if (dt == '' || dt =='Invalid Date')
-    dt = new Date().toISOString().slice(0, 10);
-  //console.log("2.dt: "+dt);
+    //dt = new Date().toISOString().slice(0, 10);
+    dt = new Date();
+  //else
+    //dt = dt.toISOString().slice(0,10);
+  console.log("2.dt: "+dt);
   let user = null;
   try {
     user = await User.findById(id);
@@ -97,9 +100,38 @@ app.post("/api/users/:_id/exercises", async (req, res) => {
 // get api to get user exercise logs
 app.get("/api/users/:_id/logs", async (req, res) => {
   let id = req.params._id;
+  const {from, to, limit } = req.query;
+  //console.log(from, to, limit);
   let exercises = null;
   try {
-    exercises = await Exercise.find({ userId: id });
+    let fromDt, toDt, filter1;
+    if(!(from === undefined)){
+      fromDt = new Date(from);
+      fromDt = (fromDt == 'Invalid Date') ? '' : fromDt;//.toISOString().slice(0, 10);
+      //console.log("fromDt: "+fromDt);
+    }
+    if(fromDt != ''){
+      if(!(to === undefined)){
+        toDt = new Date(to);
+        toDt = (toDt == 'Invalid Date') ? new Date()//.toISOString().slice(0, 10) 
+          : toDt;//.toISOString().slice(0, 10);
+        // toDt = (toDt == 'Invalid Date') ? new Date() : toDt;
+      }else{
+        toDt = new Date();//.toISOString().slice(0, 10);
+      }
+      //console.log("toDt: "+toDt);
+      filter1 = {
+        userId: id,
+        date: {$gte: fromDt, $lte: toDt}
+      };
+    }else{
+      filter1 = { userId: id };
+    }
+    //console.log("filter: "+filter1.toString());
+    if(limit === undefined)
+      exercises = (await Exercise.find(filter1));
+    else
+      exercises = (await Exercise.find(filter1).limit(limit).exec());
     //console.log(exercises.length);
   } catch (err) {
     console.log(err);
@@ -114,7 +146,8 @@ app.get("/api/users/:_id/logs", async (req, res) => {
     }
     logObj = logObj + '{"description": ' + '"' + exercises[i].description + '",';
     logObj = logObj + '"duration": ' + exercises[i].duration + ',';
-    logObj = logObj + '"date": ' + '"' + (new Date(exercises[i].date)).toDateString() + '"}';
+    //console.log("tds: "+exercises[i].date);
+    logObj = logObj + '"date": ' + '"' + exercises[i].date.toDateString() + '"}';
     if (i == exercises.length - 1) {
       logObj = logObj + ']}'
     } else {
