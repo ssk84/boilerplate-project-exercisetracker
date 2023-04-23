@@ -66,13 +66,10 @@ app.post("/api/users/:_id/exercises", async (req, res) => {
   let desc = req.body.description;
   let duration = req.body.duration;
   let dt = new Date(req.body.date);
-  console.log("1.dt: "+dt);
+  //console.log("1.dt: "+dt);
   if (dt == '' || dt =='Invalid Date')
-    //dt = new Date().toISOString().slice(0, 10);
     dt = new Date();
-  //else
-    //dt = dt.toISOString().slice(0,10);
-  console.log("2.dt: "+dt);
+  //console.log("2.dt: "+dt);
   let user = null;
   try {
     user = await User.findById(id);
@@ -107,18 +104,17 @@ app.get("/api/users/:_id/logs", async (req, res) => {
     let fromDt, toDt, filter1;
     if(!(from === undefined)){
       fromDt = new Date(from);
-      fromDt = (fromDt == 'Invalid Date') ? '' : fromDt;//.toISOString().slice(0, 10);
-      console.log("fromDt: "+fromDt);
+      fromDt = (fromDt == 'Invalid Date') ? '' : fromDt;
+      //console.log("fromDt: "+fromDt);
       if(fromDt != ''){
         if(!(to === undefined)){
           toDt = new Date(to);
-          toDt = (toDt == 'Invalid Date') ? new Date()//.toISOString().slice(0, 10) 
-            : toDt;//.toISOString().slice(0, 10);
-          // toDt = (toDt == 'Invalid Date') ? new Date() : toDt;
+          toDt = (toDt == 'Invalid Date') ? new Date()
+            : toDt;
         }else{
-          toDt = new Date();//.toISOString().slice(0, 10);
+          toDt = new Date();
         }
-        console.log("toDt: "+toDt);
+        //console.log("toDt: "+toDt);
         filter1 = {
           userId: id,
           date: {$gte: fromDt, $lte: toDt}
@@ -127,12 +123,12 @@ app.get("/api/users/:_id/logs", async (req, res) => {
     }else{
       filter1 = { userId: id };
     }
-    console.log("filter: "+JSON.stringify(filter1));
+    //console.log("filter: "+JSON.stringify(filter1));
     if(limit === undefined)
       exercises = (await Exercise.find(filter1));
     else
       exercises = (await Exercise.find(filter1).limit(limit).exec());
-    console.log(exercises.length);
+    //console.log(exercises.length);
   } catch (err) {
     console.log(err);
   }
